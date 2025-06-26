@@ -2,37 +2,57 @@ import streamlit as st
 import datetime
 import pandas as pd
 import habit_component # Your custom component
-from authlib.integrations.streamlit_client import OAuth2Mixin
+from streamlit_oauth import OAuth2Component # <-- Import the new library
+import base64
+import json
 
-# --- 1. Login Configuration (Add this at the top) ---
-# This uses the st.secrets feature to securely load your credentials.
-oauth2 = OAuth2Mixin(
-    client_id=st.secrets.auth.client_id,
-    client_secret=st.secrets.auth.client_secret,
-    authorize_url="https://accounts.google.com/o/oauth2/auth",
-    access_token_url="https://oauth2.googleapis.com/token",
-    server_metadata_url=st.secrets.auth.server_metadata_url,
-    redirect_uri=st.secrets.auth.redirect_uri,
-    scope="openid email profile",
-)
+# --- 1. Login Configuration using the new library ---
+# This uses st.secrets to securely load your credentials.
+CLIENT_ID = st.secrets.auth.client_id
+CLIENT_SECRET = st.secrets.auth.client_secret
+AUTHORIZE_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
+TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
+# IMPORTANT: This URI now matches your deployed application.
+REDIRECT_URI = "https://personal-habit-tracker-app-krvmn7pnh8jmm4dvabbtge.streamlit.app/"
+
+# Create an OAuth2Component instance
+oauth2_component = OAuth2Component(CLIENT_ID, CLIENT_SECRET, AUTHORIZE_ENDPOINT, TOKEN_ENDPOINT, TOKEN_ENDPOINT, TOKEN_ENDPOINT)
 
 st.title("Personal Habit Tracker")
 
-# --- 2. Login Check (Wrap your app in this logic) ---
-# Check if the user is logged in
-if 'user' not in st.session_state:
-    # If not logged in, show the login button and stop
-    if st.button("Login with Google"):
-        redirect_uri = oauth2.authorize_redirect()
-        st.session_state['redirect_uri'] = redirect_uri
+# --- 2. New Login Check ---
+# Check if a token exists in the session state
+if 'token' not in st.session_state:
+    # If not, show the authorization button
+    result = oauth2_component.authorize_button(
+        name="Login with Google",
+        icon="https://www.google.com/favicon.ico",
+        redirect_uri=REDIRECT_URI,
+        scope="openid email profile",
+        key="google",
+        extras_params={"prompt": "consent", "access_type": "offline"},
+    )
+    # If a result is returned, it means the user has authorized.
+    # We store the token in the session state and rerun the app.
+    if result:
+        st.session_state.token = result.get('token')
         st.rerun()
     st.stop()
 else:
-    # If the user is logged in, show a welcome message and logout button
-    user_info = st.session_state['user']
-    st.write(f"Welcome, {user_info.get('name', 'User')}!")
+    # If a token exists, the user is logged in.
+    token_str = st.session_state['token']['id_token']
+    # Decode the token to get user info
+    try:
+        payload = token_str.split('.')[1]
+        payload += '=' * (-len(payload) % 4)
+        user_info = json.loads(base64.b64decode(payload))
+        st.write(f"Welcome, {user_info.get('name', 'User')}!")
+    except Exception as e:
+        st.write("Welcome, User!")
+        print(f"Error decoding token: {e}")
+
     if st.button("Logout"):
-        del st.session_state['user']
+        del st.session_state.token
         st.rerun()
 
 # --- Your Existing App Code (remains the same) ---
@@ -129,14 +149,3 @@ if recent_days and st.session_state.habits:
         st.table(df.set_index("Habit"))
 else:
     st.info("No history yet. Start tracking your habits!")
-
-# --- 3. OAuth Callback Handler (Add this at the very end) ---
-# This part runs after the main script to handle the Google redirect.
-if 'redirect_uri' in st.session_state:
-    try:
-        token = oauth2.authorize_access_token()
-        st.session_state['user'] = token['userinfo']
-        del st.session_state['redirect_uri'] # Clean up
-        st.rerun()
-    except Exception as e:
-        st.error(f"Login failed: {e}")
