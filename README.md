@@ -11,7 +11,8 @@ A modern and interactive habit tracking application built with Python, Streamlit
 # Home Page Without Habits Section
 ![Habit Tracker Hompage Without Habits](https://github.com/Pakupodisathish/personal-habit-tracker-app/blob/main/interface_screenshot_3.png?raw=true)
 
-
+# Home Page After Adding Habit HabitCheckList Component
+![Habit Tracker Homepage Habit CheckList](https://github.com/Pakupodisathish/personal-habit-tracker-app/blob/main/interface_screenshot_4.png?raw=true)_
 
 ### 🔴 Live Demo
 
