@@ -1,4 +1,3 @@
-# Force cache refresh v1
 streamlit
 pandas
-authlib>=1.2.0
+authlib==1.3.0
