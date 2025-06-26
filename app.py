@@ -64,7 +64,7 @@ with st.form("new_habit_form", clear_on_submit=True):
 # Delete habit
 if st.session_state.habits:
     st.subheader("Delete habit")
-    habit_to_delete = st.selectbox("Habit to delete:", st.session_state.habits, key="delete_select")
+    habit_to_delete = st.selectbox("Choose a habit to delete:", st.session_state.habits, key="delete_select")
     if st.button("Delete Habit"):
         st.session_state.habits.remove(habit_to_delete)
         for day in st.session_state.habits_status:
