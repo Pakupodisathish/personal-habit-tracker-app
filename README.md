@@ -118,6 +118,3 @@ The application should now be running locally at `http://localhost:8501`.
 
 ---
 
-## License
-
-This project is licensed under the MIT License - see the `LICENSE.md` file for details (if applicable).
