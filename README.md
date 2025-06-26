@@ -4,7 +4,7 @@ A modern and interactive habit tracking application built with Python, Streamlit
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://personal-habit-tracker-app-krvmn7pnh8jmm4dvabbtge.streamlit.app/)
 
-*Note: To add a screenshot, upload an image to your GitHub repository and replace `<INSERT_SCREENSHOT_URL_HERE>` with the direct link to the image.*
+![Habit Tracker Screenshot](https://github.com/Pakupodisathish/personal-habit-tracker-app/blob/main/interface_screenshot_1.png?raw=true)
 
 ### 🔴 Live Demo
 
