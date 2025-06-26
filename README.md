@@ -1,6 +1,9 @@
 Personal Habit Tracker
 A modern and interactive habit tracking application built with Python, Streamlit, and a custom React component. This app allows users to add, track, and manage their daily habits with a clean and user-friendly interface.
 
+
+Note: To add a screenshot, upload an image to your GitHub repository and replace <INSERT_SCREENSHOT_URL_HERE> with the direct link to the image.
+
 🔴 Live Demo
 Click here to try the live application!
 
@@ -18,15 +21,29 @@ Secure Google Login: Uses OAuth 2.0 to ensure each user's habit list is private 
 Responsive Design: Looks great on both desktop and mobile devices.
 
 Technologies Used
-Backend: Python, Streamlit
+Category
 
-Frontend: React.js, CSS
+Technology
 
-Data Handling: Pandas
+Backend
 
-Authentication: streamlit-oauth, Google OAuth 2.0
+Python, Streamlit
 
-Deployment: Streamlit Community Cloud
+Frontend
+
+React.js, CSS
+
+Data
+
+Pandas
+
+Auth
+
+streamlit-oauth, Google OAuth 2.0
+
+Deployment
+
+Streamlit Community Cloud
 
 Local Setup and Installation
 To run this project on your local machine, please follow these steps:
@@ -43,7 +60,7 @@ cd personal-habit-tracker-app
 2. Set Up the Python Environment
 It is recommended to use a virtual environment.
 
-# Create and activate a virtual environment (optional but recommended)
+# Create and activate a virtual environment (optional)
 python -m venv venv
 source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
 
