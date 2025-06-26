@@ -1,27 +1,41 @@
-print("DEBUG from habit_component.py: File is being parsed!")
 import streamlit as st
 import datetime
 import pandas as pd
-import os 
-import authlib# Keep os for potential other path needs, though not strictly needed for this version
-# import authlib # Assuming authlib is still needed for your login logic
-import habit_component # <--- IMPORTANT: This imports your custom component file
-print(f"DEBUG from app.py: Loaded habit_component from: {habit_component.__file__}")
+import habit_component # Your custom component
+from authlib.integrations.streamlit_client import OAuth2Mixin
+
+# --- 1. Login Configuration (Add this at the top) ---
+# This uses the st.secrets feature to securely load your credentials.
+oauth2 = OAuth2Mixin(
+    client_id=st.secrets.auth.client_id,
+    client_secret=st.secrets.auth.client_secret,
+    authorize_url="https://accounts.google.com/o/oauth2/auth",
+    access_token_url="https://oauth2.googleapis.com/token",
+    server_metadata_url=st.secrets.auth.server_metadata_url,
+    redirect_uri=st.secrets.auth.redirect_uri,
+    scope="openid email profile",
+)
+
 st.title("Personal Habit Tracker")
 
-# App login - Note: st.user.is_logged_in and st.login/logout are often for
-# Streamlit Community Cloud or specific integrations. For local dev,
-# you might need to adjust or remove this if it's causing issues
-# or if it's based on an old Streamlit feature.
-# Streamlit has `st.experimental_user` for user info.
-# This part of the code might need review if it's not working as expected.
-# For now, I'll keep it as is.
-if not st.user.is_logged_in:
-    if st.button("Login In With Google"):
-        st.login()
+# --- 2. Login Check (Wrap your app in this logic) ---
+# Check if the user is logged in
+if 'user' not in st.session_state:
+    # If not logged in, show the login button and stop
+    if st.button("Login with Google"):
+        redirect_uri = oauth2.authorize_redirect()
+        st.session_state['redirect_uri'] = redirect_uri
+        st.rerun()
     st.stop()
-if st.button("logout"):
-    st.logout()
+else:
+    # If the user is logged in, show a welcome message and logout button
+    user_info = st.session_state['user']
+    st.write(f"Welcome, {user_info.get('name', 'User')}!")
+    if st.button("Logout"):
+        del st.session_state['user']
+        st.rerun()
+
+# --- Your Existing App Code (remains the same) ---
 
 # Initialising session state
 if "habits" not in st.session_state:
@@ -35,13 +49,12 @@ if today not in st.session_state.habits_status:
 
 # Adding new habit
 st.subheader("Add new habit:")
-with st.form("new_habit_form",clear_on_submit=True):
+with st.form("new_habit_form", clear_on_submit=True):
     new_habit = st.text_input("Add new habit:")
     add_habit = st.form_submit_button("Add habit")
     if add_habit and new_habit.strip():
         if new_habit not in st.session_state.habits:
             st.session_state.habits.append(new_habit)
-            # Ensure the new habit is added to today's status
             st.session_state.habits_status[today][new_habit] = False
             st.success(f"New habit: {new_habit} added successfully")
             st.rerun()
@@ -51,12 +64,12 @@ with st.form("new_habit_form",clear_on_submit=True):
 # Delete habit
 if st.session_state.habits:
     st.subheader("Delete habit")
-    habit_to_delete = st.selectbox("Habit to delete:", st.session_state.habits)
-    if st.button("Delete habit"):
+    habit_to_delete = st.selectbox("Habit to delete:", st.session_state.habits, key="delete_select")
+    if st.button("Delete Habit"):
         st.session_state.habits.remove(habit_to_delete)
         for day in st.session_state.habits_status:
             st.session_state.habits_status[day].pop(habit_to_delete, None)
-        st.session_state.just_deleted_a_habit = True 
+        st.session_state.just_deleted_a_habit = True
         st.write(f"Deleted habit: {habit_to_delete}")
         st.rerun()
 
@@ -65,42 +78,34 @@ st.subheader(f"Today's habits {today}")
 if not st.session_state.habits:
     st.info("No habits Yet. Add some above!")
 else:
-    # Prepare data for the component
-    # The component expects a list of habit names for 'habits'
-    # And a list of already completed habit names for 'completed_habits'
-    habits_for_component = list(st.session_state.habits) # Ensure it's a list of strings
+    habits_for_component = list(st.session_state.habits)
     completed_habits_for_component = [
         habit for habit, done in st.session_state.habits_status[today].items() if done
     ]
-    # Call the component using the imported module
+
     updated_completed = habit_component.habitCheckList(
-        habits_for_component,
-        completed_habits_for_component,
+        habits=habits_for_component,
+        completed_habits=completed_habits_for_component,
         key="habit_checklist_key"
     )
-
+    
     if st.session_state.pop('just_deleted_a_habit', False):
-    # If the flag exists, we do nothing and just remove the flag.
-    # This prevents the component's old state from overwriting our correct state.
-         pass 
+        pass
     elif updated_completed is not None and set(completed_habits_for_component) != set(updated_completed):
-    # This is a normal click, so we update the state and rerun as usual.
         for habit in st.session_state.habits:
             st.session_state.habits_status[today][habit] = habit in updated_completed
         st.rerun()
 
-    total_completed = sum(st.session_state.habits_status[today][habit] for habit in st.session_state.habits)
+    total_completed = sum(st.session_state.habits_status[today].get(habit, False) for habit in st.session_state.habits)
     total_habits = len(st.session_state.habits)
-    if total_habits > 0: # Avoid division by zero
+    if total_habits > 0:
         st.success(f"Progress: {total_completed}/{total_habits} habits Completed Today! ({total_completed/total_habits*100:.0f}%)")
         st.write("Great, keep going!")
     else:
         st.info("No habits to track progress for.")
 
-
 # Habit history
 st.subheader("Habit Completion History (last 7 Days)")
-# Get recent 7 days, excluding future dates relative to today
 all_days = sorted(st.session_state.habits_status.keys(), reverse=True)
 recent_days = []
 for day_str in all_days:
@@ -114,11 +119,24 @@ if recent_days and st.session_state.habits:
     data = []
     for habit in st.session_state.habits:
         row = {"Habit": habit}
-        for day in recent_days: # Iterate through recent_days, not all history
+        for day in recent_days:
             status = st.session_state.habits_status.get(day, {}).get(habit, False)
             row[day] = "✅" if status else "❌"
         data.append(row)
-    df = pd.DataFrame(data)
-    st.table(df)
+    
+    if data:
+        df = pd.DataFrame(data)
+        st.table(df.set_index("Habit"))
 else:
     st.info("No history yet. Start tracking your habits!")
+
+# --- 3. OAuth Callback Handler (Add this at the very end) ---
+# This part runs after the main script to handle the Google redirect.
+if 'redirect_uri' in st.session_state:
+    try:
+        token = oauth2.authorize_access_token()
+        st.session_state['user'] = token['userinfo']
+        del st.session_state['redirect_uri'] # Clean up
+        st.rerun()
+    except Exception as e:
+        st.error(f"Login failed: {e}")
