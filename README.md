@@ -2,9 +2,12 @@
 
 A modern and interactive habit tracking application built with Python, Streamlit, and a custom React component. This app allows users to add, track, and manage their daily habits with a clean and user-friendly interface.
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://personal-habit-tracker-app-krvmn7pnh8jmm4dvabbtge.streamlit.app/)
-
+#login page 
 ![Habit Tracker Screenshot](https://github.com/Pakupodisathish/personal-habit-tracker-app/blob/main/interface_screenshot_1.png?raw=true)
+
+#Home page Adding Habits
+![Habit Tracker Screenshot](https://github.com/Pakupodisathish/personal-habit-tracker-app/blob/main/interface_screenshot_2.png?raw=true)
+
 
 ### 🔴 Live Demo
 
